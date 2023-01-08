@@ -1,0 +1,27 @@
+button {
+	height: 70px;
+	width: 70px;
+	font-size: 24px;
+}
+
+
+#calculator {
+	/*display: flex;*/
+	margin: auto;
+	background-color: pink;
+	width: 300px;
+	padding: 20px;
+}
+
+
+#display {
+	background-color: white;
+	height: 30px;
+	margin-bottom: 10px;
+	padding: 5px;
+	line-height: 24px;
+	box-sizing: border-box;
+	font-size: 20px
+}
+
+
