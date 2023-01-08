@@ -3,6 +3,7 @@ const operationsButtons = document.querySelector('.operations');
 const numberButtons = document.querySelector('.numbers');
 
 let arrayToOperateOn = [];
+let wipeDisplay = false;
 
 
 function add(a, b) {
@@ -48,7 +49,7 @@ function clear() {
 	// reset array
 	arrayToOperateOn = [];
 	// clear display
-	display.textContent = ' ';
+	display.textContent = 0;
 }
 
 
@@ -58,7 +59,7 @@ function equal(arrayToOperateOn) {
 	const isOperation = (element) => element === '+' || element ===  '-' || element === '*' || element === '/';
 
 	let operationIndex = arrayToOperateOn.findIndex(isOperation);
-	// let operation = arrayToOperateOn[operationIndex];
+
 	let operation = arrayToOperateOn[arrayToOperateOn.findIndex(isOperation)];
 
 	// Find number1
@@ -68,15 +69,28 @@ function equal(arrayToOperateOn) {
 	let number2 = +arrayToOperateOn.slice(operationIndex + 1).join('');
 
 	// call operate function 
-	console.log(operate(number1, number2, operation));
+	let result = operate(number1, number2, operation);
 
 	// display result
+	display.textContent = result;
 
+	// update array to have only the result
+	// arrayToOperateOn = String(result).split('');
+
+	// console.log(arrayToOperateOn)
+	// return arrayToOperateOn;
+	wipeDisplay = true;
+	return result;
 }
+
 
 
 function show(e) {	
 	// Doesn't return anything if clicked outside buttons but in the calculator
+	if (wipeDisplay) {
+		display.textContent = '';
+	}
+
 	if (e.target.className !== '') {
 		return;
 	}
@@ -87,31 +101,27 @@ function show(e) {
 	}
 
 	if (e.target.textContent === '=') {
-		console.log("it's equal!");
-		console.log(arrayToOperateOn);
 		equal(arrayToOperateOn);
+		arrayToOperateOn = [];		
 		return;
+	}
+
+	if (display.textContent === '0') {
+		display.textContent = '';
 	}
 
 	// At the moment, it displays everything
 	display.textContent += e.target.textContent;
-
 	arrayToOperateOn.push(e.target.textContent);
-	// console.log(arrayToOperateOn);
 
 	return arrayToOperateOn;
 }
 
 
 
-
-
-
 numberButtons.addEventListener('mousedown', show);
 
 operationsButtons.addEventListener('mousedown', show);
-
-
 
 
 
