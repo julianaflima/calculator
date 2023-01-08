@@ -4,6 +4,11 @@ const numberButtons = document.querySelector('.numbers');
 
 let arrayToOperateOn = [];
 let wipeDisplay = false;
+let lockNumbers = false;
+let lastClicked = '';
+let firstNumber = 0;
+let secondNumber = 0;
+
 
 
 function add(a, b) {
@@ -45,25 +50,44 @@ function operate(number1, number2, operation) {
 }
 
 
+function lastClick(lastClick) {
+	lastClicked = lastClick;
+}
+
+
 function clear() {
 	// reset array
 	arrayToOperateOn.length = 0;
 	// clear display
 	display.textContent = 0;
+
+	lastClick('clear');
 }
 
 
 function equal(arrayToOperateOn) {
 	// get numbers and operations from array
-	// Find index of operation
-	const isOperation = (element) => element === '+' || element ===  '-' || element === '*' || element === '/';
 
-	let operationIndex = arrayToOperateOn.findIndex(isOperation);
+	// Main operator is the second operation sign
+	let arrayRed = arrayToOperateOn.reduce(function(ind, el, i) {
+	if (el === '+' || el === '-' || el === '*' || el === '/')
+	    ind.push(i);
+	return ind;
+	}, []);
 
-	let operation = arrayToOperateOn[arrayToOperateOn.findIndex(isOperation)];
+	let operationIndex;
+
+	if (arrayRed.length > 1) {
+		operationIndex = arrayRed[1];	
+	} else {
+		operationIndex = arrayRed[0];
+	}
+
+	let operation = arrayToOperateOn[operationIndex];
 
 	// Find number1
 	let number1 = +arrayToOperateOn.slice(0, operationIndex).join('');
+	console.log(number1);
 
 	// Find number2
 	let number2 = +arrayToOperateOn.slice(operationIndex + 1).join('');
@@ -78,24 +102,56 @@ function equal(arrayToOperateOn) {
 	arrayToOperateOn.length = 0;
 	String(result).split('').forEach(element => arrayToOperateOn.push(element));
 
-	console.log(arrayToOperateOn);
 
 	wipeDisplay = true;
+	lockNumbers = true;
+	numberButtons.removeEventListener('mousedown', numberButton);
+
+	lastClick('=');
+
 	return result;
 }
 
 
-
-function show(e) {	
-	// Doesn't return anything if clicked outside buttons but in the calculator
-		console.log(arrayToOperateOn);
-
+function numberButton(e) {		
 	if (wipeDisplay) {
-		console.log(arrayToOperateOn);
 		display.textContent = '';
 		wipeDisplay = false;
 	}
 
+	// Doesn't return anything if clicked outside buttons but in the calculator
+	if (e.target.className !== '') {
+		return;
+	}
+
+
+	if (display.textContent === '0') {
+		display.textContent = '';
+	}
+
+	
+	arrayToOperateOn.push(e.target.textContent);
+	display.textContent = arrayToOperateOn.join('');
+
+	lastClick('number');
+
+	return arrayToOperateOn;
+}
+
+
+function operationButton(e) {
+	
+	if (lockNumbers) {
+		numberButtons.addEventListener('mousedown', numberButton);
+		lockNumbers = false;
+	}
+
+	if (wipeDisplay) {
+		display.textContent = '';
+		wipeDisplay = false;
+	}
+
+	// When clicked outside buttons but in the calculator, it doesn't do anything
 	if (e.target.className !== '') {
 		return;
 	}
@@ -110,28 +166,35 @@ function show(e) {
 		return;
 	}
 
-	if (display.textContent === '0') {
-		display.textContent = '';
+	if (e.target.textContent === 'BackSpace') {
+		// Remove last item from the array
+		arrayToOperateOn.pop();
+
+		// Remove from display
+		display.textContent = arrayToOperateOn.join('');
+		return;
 	}
 
-	// At the moment, it displays everything
-	display.textContent += e.target.textContent;
+	if (lastClicked === 'operation') {
+		// Remove last item from the array
+		arrayToOperateOn.pop();
+
+		// Remove from display
+		display.textContent = arrayToOperateOn.join('');
+	}
+
 	arrayToOperateOn.push(e.target.textContent);
+	display.textContent = arrayToOperateOn.join('');
+
+	lastClick('operation');
 
 	return arrayToOperateOn;
 }
 
 
+numberButtons.addEventListener('mousedown', numberButton);
 
-numberButtons.addEventListener('mousedown', show);
-
-operationsButtons.addEventListener('mousedown', show);
-
-
-
-
-
-
+operationsButtons.addEventListener('mousedown', operationButton);
 
 
 
