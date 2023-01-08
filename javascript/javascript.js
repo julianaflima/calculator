@@ -2,6 +2,8 @@ const display = document.querySelector('#display')
 const operationsButtons = document.querySelector('.operations');
 const numberButtons = document.querySelector('.numbers');
 
+let arrayToOperateOn = [];
+
 
 function add(a, b) {
 	return a + b;
@@ -39,8 +41,6 @@ function operate(number1, number2, operation) {
 				return divide(number1, number2);
 				break;
 		}
-		
-		return result;
 }
 
 
@@ -73,3 +73,56 @@ function equal(arrayToOperateOn) {
 	// display result
 
 }
+
+
+function show(e) {	
+	// Doesn't return anything if clicked outside buttons but in the calculator
+	if (e.target.className !== '') {
+		return;
+	}
+
+	if (e.target.textContent === 'clear') {
+		clear();
+		return 
+	}
+
+	if (e.target.textContent === '=') {
+		console.log("it's equal!");
+		console.log(arrayToOperateOn);
+		equal(arrayToOperateOn);
+		return;
+	}
+
+	// At the moment, it displays everything
+	display.textContent += e.target.textContent;
+
+	arrayToOperateOn.push(e.target.textContent);
+	// console.log(arrayToOperateOn);
+
+	return arrayToOperateOn;
+}
+
+
+
+
+
+
+numberButtons.addEventListener('mousedown', show);
+
+operationsButtons.addEventListener('mousedown', show);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
