@@ -47,7 +47,7 @@ function operate(number1, number2, operation) {
 
 function clear() {
 	// reset array
-	arrayToOperateOn = [];
+	arrayToOperateOn.length = 0;
 	// clear display
 	display.textContent = 0;
 }
@@ -75,10 +75,11 @@ function equal(arrayToOperateOn) {
 	display.textContent = result;
 
 	// update array to have only the result
-	// arrayToOperateOn = String(result).split('');
+	arrayToOperateOn.length = 0;
+	String(result).split('').forEach(element => arrayToOperateOn.push(element));
 
-	// console.log(arrayToOperateOn)
-	// return arrayToOperateOn;
+	console.log(arrayToOperateOn);
+
 	wipeDisplay = true;
 	return result;
 }
@@ -87,8 +88,12 @@ function equal(arrayToOperateOn) {
 
 function show(e) {	
 	// Doesn't return anything if clicked outside buttons but in the calculator
+		console.log(arrayToOperateOn);
+
 	if (wipeDisplay) {
+		console.log(arrayToOperateOn);
 		display.textContent = '';
+		wipeDisplay = false;
 	}
 
 	if (e.target.className !== '') {
@@ -102,7 +107,6 @@ function show(e) {
 
 	if (e.target.textContent === '=') {
 		equal(arrayToOperateOn);
-		arrayToOperateOn = [];		
 		return;
 	}
 
