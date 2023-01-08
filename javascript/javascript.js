@@ -5,9 +5,8 @@ const numberButtons = document.querySelector('.numbers');
 let arrayToOperateOn = [];
 let wipeDisplay = false;
 let lockNumbers = false;
+let callEqual = 0;
 let lastClicked = '';
-let firstNumber = 0;
-let secondNumber = 0;
 
 
 
@@ -65,29 +64,47 @@ function clear() {
 }
 
 
-function equal(arrayToOperateOn) {
-	// get numbers and operations from array
+function unlockNumbers() {
+ numberButtons.addEventListener('mousedown', numberButton);
+		lockNumbers = false;	
+}
 
-	// Main operator is the second operation sign
+
+function deleteLastItem() {
+	// Remove last item from the array
+	arrayToOperateOn.pop();
+
+	// Remove from display
+	display.textContent = arrayToOperateOn.join('');
+}
+
+
+function findOperator(arrayToOperateOn) {
+	// Get an array with all operators
 	let arrayRed = arrayToOperateOn.reduce(function(ind, el, i) {
-	if (el === '+' || el === '-' || el === '*' || el === '/')
-	    ind.push(i);
-	return ind;
-	}, []);
+		if (el === '+' || el === '-' || el === '*' || el === '/')
+		    ind.push(i);
+		return ind;
+		}, []);
 
-	let operationIndex;
-
+	// Determine main operator
+	// If more than 1, then it's the second
 	if (arrayRed.length > 1) {
-		operationIndex = arrayRed[1];	
+		return arrayRed[1];	
 	} else {
-		operationIndex = arrayRed[0];
+		return arrayRed[0];
 	}
+}
+
+
+function equal(arrayToOperateOn) {
+	// Index of main operator in the arrayToOperateOn
+	let operationIndex = findOperator(arrayToOperateOn);	
 
 	let operation = arrayToOperateOn[operationIndex];
 
 	// Find number1
 	let number1 = +arrayToOperateOn.slice(0, operationIndex).join('');
-	console.log(number1);
 
 	// Find number2
 	let number2 = +arrayToOperateOn.slice(operationIndex + 1).join('');
@@ -99,12 +116,18 @@ function equal(arrayToOperateOn) {
 	display.textContent = result;
 
 	// update array to have only the result
+	// delete all items
 	arrayToOperateOn.length = 0;
+	// add result to arrayToOperateOn
 	String(result).split('').forEach(element => arrayToOperateOn.push(element));
 
 
 	wipeDisplay = true;
 	lockNumbers = true;
+	// Next time an operation button is clicked, it will give the result
+	callEqual = 0;
+	console.log(callEqual);
+
 	numberButtons.removeEventListener('mousedown', numberButton);
 
 	lastClick('=');
@@ -114,10 +137,6 @@ function equal(arrayToOperateOn) {
 
 
 function numberButton(e) {		
-	if (wipeDisplay) {
-		display.textContent = '';
-		wipeDisplay = false;
-	}
 
 	// Doesn't return anything if clicked outside buttons but in the calculator
 	if (e.target.className !== '') {
@@ -128,7 +147,6 @@ function numberButton(e) {
 	if (display.textContent === '0') {
 		display.textContent = '';
 	}
-
 	
 	arrayToOperateOn.push(e.target.textContent);
 	display.textContent = arrayToOperateOn.join('');
@@ -142,8 +160,7 @@ function numberButton(e) {
 function operationButton(e) {
 	
 	if (lockNumbers) {
-		numberButtons.addEventListener('mousedown', numberButton);
-		lockNumbers = false;
+		unlockNumbers();
 	}
 
 	if (wipeDisplay) {
@@ -162,31 +179,38 @@ function operationButton(e) {
 	}
 
 	if (e.target.textContent === '=') {
+		if (callEqual === 0) {
+			return;
+		}
 		equal(arrayToOperateOn);
 		return;
 	}
 
 	if (e.target.textContent === 'BackSpace') {
-		// Remove last item from the array
-		arrayToOperateOn.pop();
+		deleteLastItem()
 
-		// Remove from display
-		display.textContent = arrayToOperateOn.join('');
+		if (lastClicked === 'operation') {
+			callEqual--;
+		}
 		return;
 	}
 
 	if (lastClicked === 'operation') {
-		// Remove last item from the array
-		arrayToOperateOn.pop();
+		deleteLastItem();
+		callEqual--;
+	}
 
-		// Remove from display
-		display.textContent = arrayToOperateOn.join('');
+	if (callEqual === 1) {
+		equal(arrayToOperateOn);
+		unlockNumbers();
 	}
 
 	arrayToOperateOn.push(e.target.textContent);
 	display.textContent = arrayToOperateOn.join('');
 
 	lastClick('operation');
+	callEqual++;
+	console.log(callEqual)
 
 	return arrayToOperateOn;
 }
