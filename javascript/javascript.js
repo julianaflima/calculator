@@ -132,7 +132,7 @@ function equal(arrayToOperateOn) {
 
 	lastClick('=');
 
-	return result;
+	return display.textContent = result;
 }
 
 
@@ -179,7 +179,8 @@ function operationButton(e) {
 	}
 
 	if (e.target.textContent === '=') {
-		if (callEqual === 0) {
+		if (callEqual === 0 || lastClicked === '=') {
+			display.textContent = arrayToOperateOn.join('');
 			return;
 		}
 		equal(arrayToOperateOn);
