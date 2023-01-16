@@ -23,7 +23,8 @@ button,
 	font-weight: 900;
 }
 
-
+#extra-number-div,
+.extra-buttons,
 .numbers{
 	display: flex;
 	flex-wrap: wrap;
@@ -34,6 +35,7 @@ button,
 .numbers button {
 	background-color: #ff777b;
 }
+
 
 #clear, 
 #backspace {
@@ -46,14 +48,18 @@ button,
 	gap: 2px;
 }
 
-#operations {
+.operations {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 }
 
-#operations button {
+.operations button {
 	background-color: #777bff;
+}
+
+#operation-clicked {
+	background-color: white;
 }
 
 #zero,

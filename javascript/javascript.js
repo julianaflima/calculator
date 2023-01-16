@@ -1,11 +1,13 @@
 const display = document.querySelector('#display')
 const operationsButtons = document.querySelector('.operations');
 const numberButtons = document.querySelector('.numbers');
+const extraButtons = document.querySelector('.extra-buttons');
 
 let arrayToOperateOn = [];
-let wipeDisplay = false;
-let lockNumbers = false;
+let arrayToDisplay = [];
 let callEqual = 0;
+let noOperator = false;
+let result = '';
 let lastClicked = '';
 
 
@@ -49,36 +51,6 @@ function operate(number1, number2, operation) {
 }
 
 
-function lastClick(lastClick) {
-	lastClicked = lastClick;
-}
-
-
-function clear() {
-	// reset array
-	arrayToOperateOn.length = 0;
-	// clear display
-	display.textContent = 0;
-
-	lastClick('clear');
-}
-
-
-function unlockNumbers() {
- numberButtons.addEventListener('mousedown', numberButton);
-		lockNumbers = false;	
-}
-
-
-function deleteLastItem() {
-	// Remove last item from the array
-	arrayToOperateOn.pop();
-
-	// Remove from display
-	display.textContent = arrayToOperateOn.join('');
-}
-
-
 function findOperator(arrayToOperateOn) {
 	// Get an array with all operators
 	let arrayRed = arrayToOperateOn.reduce(function(ind, el, i) {
@@ -88,18 +60,29 @@ function findOperator(arrayToOperateOn) {
 		}, []);
 
 	// Determine main operator
-	// If more than 1, then it's the second
-	if (arrayRed.length > 1) {
-		return arrayRed[1];	
-	} else {
-		return arrayRed[0];
+	switch (true) {
+		case (arrayRed.length === 0):
+			noOperator = true;
+			return;
+		case (arrayRed.length > 1):
+			noOperator = false;
+			return arrayRed[1];	
+		default:
+			noOperator = false;
+			return arrayRed[0];
+			break;
 	}
 }
 
 
 function equal(arrayToOperateOn) {
+
 	// Index of main operator in the arrayToOperateOn
 	let operationIndex = findOperator(arrayToOperateOn);	
+
+	if (noOperator) {
+		return;
+	}
 
 	let operation = arrayToOperateOn[operationIndex];
 
@@ -110,110 +93,177 @@ function equal(arrayToOperateOn) {
 	let number2 = +arrayToOperateOn.slice(operationIndex + 1).join('');
 
 	// call operate function 
-	let result = operate(number1, number2, operation);
+	result = String(operate(number1, number2, operation));
 
-	// display result
-	display.textContent = result;
+	// Adjust the result to prevent overflow	
+	if (result.length > 13) {
+		let provResult = result.slice(0, 13);
+		result = provResult;
+		// return result;
+	}
 
-	// update array to have only the result
-	// delete all items
-	arrayToOperateOn.length = 0;
-	// add result to arrayToOperateOn
-	String(result).split('').forEach(element => arrayToOperateOn.push(element));
-
-
-	wipeDisplay = true;
-	lockNumbers = true;
-	// Next time an operation button is clicked, it will give the result
+// MIGHT NOT NEED THIS
 	callEqual = 0;
-	console.log(callEqual);
-
-	numberButtons.removeEventListener('mousedown', numberButton);
-
-	lastClick('=');
-
-	return display.textContent = result;
+	return result;
 }
 
 
-function numberButton(e) {		
-
-	// Doesn't return anything if clicked outside buttons but in the calculator
-	if (e.target.className !== '') {
-		return;
-	}
-
-
-	if (display.textContent === '0') {
-		display.textContent = '';
-	}
-	
-	arrayToOperateOn.push(e.target.textContent);
-	display.textContent = arrayToOperateOn.join('');
-
-	lastClick('number');
-
-	return arrayToOperateOn;
+// Update an array from another array
+// If the source is a string, pass as string.split('')
+function updateArray (arraySource, arrayToUpdate) {
+	arrayToUpdate.length = 0;
+	arraySource.forEach(element => arrayToUpdate.push(element));
+	return arrayToUpdate;
 }
 
 
-function operationButton(e) {
-	
-	if (lockNumbers) {
-		unlockNumbers();
+// Clear working array and display
+function clear() {
+	arrayToOperateOn.length = 0;
+
+	arrayToDisplay.length = 0
+	display.textContent = '0';
+
+	callEqual = 0;
+}
+
+
+function numberButton (e) {
+	// Do nothing if the target is not a number
+	if (e.target.className === 'numbers') return;
+
+	// Clear display if last clicked was an operation button and back to normal background color
+	if (lastClicked === 'operation') {
+		arrayToDisplay.length = 0;
 	}
 
-	if (wipeDisplay) {
-		display.textContent = '';
-		wipeDisplay = false;
-	}
-
-	// When clicked outside buttons but in the calculator, it doesn't do anything
-	if (e.target.className !== '') {
-		return;
-	}
-
-	if (e.target.textContent === 'clear') {
+	if (lastClicked === '=') {
 		clear();
-		return 
+		lastClicked = 'clear';
+		callEqual = 0;
 	}
+
+	// Prevent overflow
+	if (arrayToDisplay.length === 13) {
+		return;
+	}
+
+	// Add number to arrayToDisplay
+	arrayToDisplay.push(e.target.textContent);
+	display.textContent = arrayToDisplay.join('');
+
+	// Add number to arrayToOperateOn
+	arrayToOperateOn.push(e.target.textContent);
+
+	lastClicked = 'number';
+}
+
+
+function operationButton (e) {
+	// Do nothing if the target is between buttons
+	console.log(arrayToOperateOn);
+
+	if (e.target.id === 'operations') return;
 
 	if (e.target.textContent === '=') {
-		if (callEqual === 0 || lastClicked === '=') {
-			display.textContent = arrayToOperateOn.join('');
+
+		// If there's no operator, = does nothing
+		findOperator(arrayToOperateOn);
+		if (noOperator) {
 			return;
 		}
+
+		// Call equal function if there's an operator 
 		equal(arrayToOperateOn);
+
+		// Update array to hold only the result
+		updateArray(result.split(''), arrayToOperateOn);
+		console.log(arrayToOperateOn);
+
+
+		// Update display
+		updateArray(arrayToOperateOn, arrayToDisplay);
+		display.textContent = arrayToDisplay.join('');
+
+		lastClicked = '=';
+		callEqual = 0;
 		return;
 	}
 
-	if (e.target.textContent === 'BackSpace') {
-		deleteLastItem()
-
-		if (lastClicked === 'operation') {
-			callEqual--;
-		}
-		return;
-	}
-
+	// Delete last item from arrayToOperateOn if last element was an operation
 	if (lastClicked === 'operation') {
-		deleteLastItem();
+		arrayToOperateOn.pop();
 		callEqual--;
 	}
 
+	// Do the math when there's one operation
 	if (callEqual === 1) {
-		equal(arrayToOperateOn);
-		unlockNumbers();
+		// Do the math; the result is a string
+		console.log(equal(arrayToOperateOn));
+
+		// Update array to hold only the result
+		updateArray(result.split(''), arrayToOperateOn);
+
+		// Update display
+		updateArray(arrayToOperateOn, arrayToDisplay);
+		display.textContent = arrayToDisplay.join('');
+
+		// Add operation to arrayToOperateOn
+		arrayToOperateOn.push(e.target.textContent);
+
+		lastClicked = 'operation';
+		callEqual++;
+		return;
 	}
+	
 
+	// For all buttons but '=', add the operation to the arrayToOperateOn
 	arrayToOperateOn.push(e.target.textContent);
-	display.textContent = arrayToOperateOn.join('');
+	// Change color of button operation
+	// e.target.id = 'operation-clicked';
 
-	lastClick('operation');
+
+	lastClicked = 'operation';
 	callEqual++;
-	console.log(callEqual)
+}
 
-	return arrayToOperateOn;
+
+function extraButton (e) {
+	if (lastClicked === 'clear') return;
+
+	switch (e.target.id) {
+		case 'clear':
+			clear();
+			lastClicked = 'clear';
+			callEqual = 0;
+			break;
+
+		case 'backspace':
+			// Backspace doesn't work after calling operation
+			if (lastClicked === '=') return;
+			
+			// Remove last item
+			arrayToOperateOn.pop();
+
+			// If there's no number in arrayToOperateOn
+			if (arrayToOperateOn.length === 0) {
+				display.textContent = '0';
+				
+				lastClicked = 'backspace';
+				return;
+			}
+
+			// Update display
+			updateArray(arrayToOperateOn, arrayToDisplay)
+			display.textContent = arrayToDisplay.join('');
+
+			lastClicked = 'backspace';
+			break;
+
+		// Does nothing if click is between buttons
+		default:
+			break;
+	}
 }
 
 
@@ -221,9 +271,7 @@ numberButtons.addEventListener('mousedown', numberButton);
 
 operationsButtons.addEventListener('mousedown', operationButton);
 
-
-
-
+extraButtons.addEventListener('mousedown', extraButton);
 
 
 
