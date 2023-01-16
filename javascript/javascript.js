@@ -116,6 +116,16 @@ function updateArray (arraySource, arrayToUpdate) {
 	return arrayToUpdate;
 }
 
+// Find if character is an operation
+function isOperation(char) {
+	if (char === '+' || char === '-' ||
+		char === '*' || char === '/') {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 
 // Clear working array and display
 function clear() {
@@ -241,6 +251,12 @@ function extraButton (e) {
 		case 'backspace':
 			// Backspace doesn't work after calling operation
 			if (lastClicked === '=') return;
+
+			// If deleting operation, decrease callEqual
+			let lastElement = arrayToOperateOn[arrayToOperateOn.length - 1];
+
+			if (isOperation(lastElement)) callEqual--;
+
 			
 			// Remove last item
 			arrayToOperateOn.pop();
@@ -248,6 +264,7 @@ function extraButton (e) {
 			// If there's no number in arrayToOperateOn
 			if (arrayToOperateOn.length === 0) {
 				display.textContent = '0';
+				arrayToDisplay.length = 0;
 				
 				lastClicked = 'backspace';
 				return;
