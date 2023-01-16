@@ -6,6 +6,7 @@ const extraButtons = document.querySelector('.extra-buttons');
 let arrayToOperateOn = [];
 let arrayToDisplay = [];
 let callEqual = 0;
+let lockDecimalPoint = false;
 let noOperator = false;
 let result = '';
 let lastClicked = '';
@@ -28,7 +29,7 @@ function multiply(a, b) {
 
 
 function divide(a, b) {
-	if (b === 0) return 'error'
+	if (b === 0) return 'error';
 	return (a / b);
 }
 
@@ -97,14 +98,73 @@ function equal(arrayToOperateOn) {
 
 	// Adjust the result to prevent overflow	
 	if (result.length > 13) {
-		let provResult = result.slice(0, 13);
-		result = provResult;
-		// return result;
+		result = preventOverflow(result);
 	}
 
 // MIGHT NOT NEED THIS
 	callEqual = 0;
 	return result;
+}
+
+
+// Reduce the number of digits of result to prevent overflow
+function preventOverflow(number) {
+	// If not an integer, then make it an integer
+	if (!Number.isInteger(number)) {
+		// Find index of decimal point
+		let index = number.toString().indexOf('.');
+
+		// Find # of decimals
+		let numberOfDecimals = number.toString().length - index - 1;
+
+		// Adjust number to remove decimals
+		number *= Math.pow(10, numberOfDecimals);
+
+		// Round up to deal with rounding errors
+		number = Math.round(number);
+
+		// Reduce number to correct # of digits
+		number = reduceNumber(number);
+
+		// Decide if need to put decimal point back or not (target - 1)
+		if (index < 13 - 1) {
+			// Put the decimal back
+			// Reduce one digit
+			number = number / 10
+			number = Math.round(number);
+
+			// Put the decimal back in original place
+			number = number.toString().slice(0, index) + '.' + number.toString().slice(index);
+
+			return number;
+
+		} else if (index === 13) {
+			// If decimal point is in the last digit, remove it
+			number = number / 10
+			number = Math.round(number);
+
+			return number;
+
+		}
+	} else {
+		// Do this if result is an integer
+		reduceNumber(number);
+
+		return number;
+	}
+}
+
+
+function reduceNumber(number) {
+	// Find # of digits in the result
+	let numberOfDigits = number.toString().length;
+
+	// Reduce rounding to the correct # of digits -- here it's 13
+	for(let i = numberOfDigits; i > 13; i--){
+		number = Math.round(number / 10);
+	}
+
+	return number;
 }
 
 
@@ -115,6 +175,7 @@ function updateArray (arraySource, arrayToUpdate) {
 	arraySource.forEach(element => arrayToUpdate.push(element));
 	return arrayToUpdate;
 }
+
 
 // Find if character is an operation
 function isOperation(char) {
@@ -142,6 +203,9 @@ function numberButton (e) {
 	// Do nothing if the target is not a number
 	if (e.target.className === 'numbers') return;
 
+	// Do nothing if there's already a decimal point
+	if (lockDecimalPoint && e.target.textContent === '.') return;
+
 	// Clear display if last clicked was an operation button and back to normal background color
 	if (lastClicked === 'operation') {
 		arrayToDisplay.length = 0;
@@ -158,6 +222,22 @@ function numberButton (e) {
 		return;
 	}
 
+	// Prevent more than one decimal point
+	if (e.target.textContent === '.') {
+		lockDecimalPoint = true;
+
+		// Add 0 when decimal point is clicked first
+		if (
+		// it's first number, so arrayToOperateOn is empty
+		arrayToOperateOn.length === 0 ||
+		// It's the second number, so last element of arrayToOperateOn is an operation
+		lastClicked === 'operation') {
+
+			arrayToDisplay.push(0);
+		}
+	}
+
+	
 	// Add number to arrayToDisplay
 	arrayToDisplay.push(e.target.textContent);
 	display.textContent = arrayToDisplay.join('');
@@ -166,6 +246,7 @@ function numberButton (e) {
 	arrayToOperateOn.push(e.target.textContent);
 
 	lastClicked = 'number';
+
 }
 
 
@@ -174,14 +255,11 @@ function operationButton (e) {
 	if (e.target.id === 'operations') return;
 
 	if (e.target.textContent === '=') {
-
 		// If there's no operator, = does nothing
 		findOperator(arrayToOperateOn);
-		if (noOperator) {
-			return;
-		}
+		if (noOperator) return;
 
-		// Call equal function if there's an operator 
+		// Calls equal function
 		equal(arrayToOperateOn);
 
 		// Update array to hold only the result
@@ -193,6 +271,7 @@ function operationButton (e) {
 
 		lastClicked = '=';
 		callEqual = 0;
+		lockDecimalPoint = false;
 		return;
 	}
 
@@ -212,13 +291,14 @@ function operationButton (e) {
 
 		// Update display
 		updateArray(arrayToOperateOn, arrayToDisplay);
-		display.textContent = arrayToDisplay.join('');
+		display.textContent = +arrayToDisplay.join('');
 
 		// Add operation to arrayToOperateOn
 		arrayToOperateOn.push(e.target.textContent);
 
 		lastClicked = 'operation';
 		callEqual++;
+		lockDecimalPoint = false;
 		return;
 	}
 	
@@ -231,6 +311,7 @@ function operationButton (e) {
 
 	lastClicked = 'operation';
 	callEqual++;
+	lockDecimalPoint = false;
 }
 
 
@@ -242,30 +323,42 @@ function extraButton (e) {
 			clear();
 			lastClicked = 'clear';
 			callEqual = 0;
+			lockDecimalPoint = false;
 			break;
 
 		case 'backspace':
 			// Backspace doesn't work after calling operation
 			if (lastClicked === '=') return;
 
-			// If deleting operation, decrease callEqual
+			// If deleting operation, decrease callEqual and display remains the same
 			let lastElement = arrayToOperateOn[arrayToOperateOn.length - 1];
-
-			if (isOperation(lastElement)) callEqual--;
-
-			// Remove last item from arrayToOperateOn
-			arrayToOperateOn.pop();
-
-			// If arrayToOperateOn is empty, display 0
-			if (arrayToOperateOn.length === 0) {
-				display.textContent = '0';
-				arrayToDisplay.length = 0;
-				
+			if (isOperation(lastElement)){ 
+				arrayToOperateOn.pop();
+				callEqual--;
 				lastClicked = 'backspace';
 				return;
 			}
 
-			// If after backspace, last element is an operation, then display everything up to the operation
+			// If deleting a decimal point, unlock button
+			if (lastElement === '.') lockDecimalPoint = false;
+
+			// If deleting last digit on the array
+			if (arrayToOperateOn.length === 1 || 
+				arrayToOperateOn.length === 0) {
+				arrayToOperateOn.pop();
+				arrayToDisplay.length = 0;
+				display.textContent = '0';
+
+				lastClicked = 'backspace';
+				lockDecimalPoint = false;
+				return;
+			}
+
+			// Remove last item from arrayToOperateOn
+			arrayToOperateOn.pop();
+
+
+			// If above deletes first digit of second number, display first number (or everything up to the operation)
 			if (isOperation(arrayToOperateOn[arrayToOperateOn.length - 1])) {			
 				// Reset array to display
 				arrayToDisplay.length = 0;
@@ -274,15 +367,19 @@ function extraButton (e) {
 				for(let i = 0; i <= arrayToOperateOn.length - 2; i++){
 					arrayToDisplay.push(arrayToOperateOn[i]);
 				}
-				display.textContent = arrayToDisplay.join('');
+				display.textContent = +arrayToDisplay.join('');
 
 				lastClicked = 'operation';
 				return;
 			}
 
-			// Update display
-			updateArray(arrayToOperateOn, arrayToDisplay)
-			display.textContent = arrayToDisplay.join('');
+
+			// Default behavior of backspace is to just remove last digit from display
+			// the last element has already been removed from arrayToOperateOn
+			// Just need to update display
+			updateArray(display.textContent.split(''), arrayToDisplay);
+			arrayToDisplay.pop();
+			display.textContent = +arrayToDisplay.join('');
 
 			lastClicked = 'backspace';
 			break;
@@ -299,6 +396,11 @@ numberButtons.addEventListener('mousedown', numberButton);
 operationsButtons.addEventListener('mousedown', operationButton);
 
 extraButtons.addEventListener('mousedown', extraButton);
+
+
+
+
+
 
 
 
