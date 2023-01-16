@@ -171,8 +171,6 @@ function numberButton (e) {
 
 function operationButton (e) {
 	// Do nothing if the target is between buttons
-	console.log(arrayToOperateOn);
-
 	if (e.target.id === 'operations') return;
 
 	if (e.target.textContent === '=') {
@@ -188,8 +186,6 @@ function operationButton (e) {
 
 		// Update array to hold only the result
 		updateArray(result.split(''), arrayToOperateOn);
-		console.log(arrayToOperateOn);
-
 
 		// Update display
 		updateArray(arrayToOperateOn, arrayToDisplay);
@@ -209,7 +205,7 @@ function operationButton (e) {
 	// Do the math when there's one operation
 	if (callEqual === 1) {
 		// Do the math; the result is a string
-		console.log(equal(arrayToOperateOn));
+		equal(arrayToOperateOn);
 
 		// Update array to hold only the result
 		updateArray(result.split(''), arrayToOperateOn);
@@ -257,16 +253,30 @@ function extraButton (e) {
 
 			if (isOperation(lastElement)) callEqual--;
 
-			
-			// Remove last item
+			// Remove last item from arrayToOperateOn
 			arrayToOperateOn.pop();
 
-			// If there's no number in arrayToOperateOn
+			// If arrayToOperateOn is empty, display 0
 			if (arrayToOperateOn.length === 0) {
 				display.textContent = '0';
 				arrayToDisplay.length = 0;
 				
 				lastClicked = 'backspace';
+				return;
+			}
+
+			// If after backspace, last element is an operation, then display everything up to the operation
+			if (isOperation(arrayToOperateOn[arrayToOperateOn.length - 1])) {			
+				// Reset array to display
+				arrayToDisplay.length = 0;
+
+				// update with values up to the operation
+				for(let i = 0; i <= arrayToOperateOn.length - 2; i++){
+					arrayToDisplay.push(arrayToOperateOn[i]);
+				}
+				display.textContent = arrayToDisplay.join('');
+
+				lastClicked = 'operation';
 				return;
 			}
 
