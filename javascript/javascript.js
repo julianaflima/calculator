@@ -1,9 +1,11 @@
+//ADD KEYBOARD SUPPORT
+
 const display = document.querySelector('#display')
 const operationsButtons = document.querySelector('.operations');
 const numberButtons = document.querySelector('.numbers');
 const extraButtons = document.querySelector('.extra-buttons');
 
-let arrayToOperateOn = [];
+let arrayToOperateOn = [0];
 let arrayToDisplay = [];
 let callEqual = 0;
 let lockDecimalPoint = false;
@@ -53,37 +55,30 @@ function operate(number1, number2, operation) {
 
 
 function findOperator(arrayToOperateOn) {
-	// Get an array with all operators
-	let arrayRed = arrayToOperateOn.reduce(function(ind, el, i) {
-		if (el === '+' || el === '-' || el === '*' || el === '/')
-		    ind.push(i);
-		return ind;
-		}, []);
+	// If we drop the first element of the array, we get an array such that the first operation is the main operation, even if the first number is negative
+	
+	let tempArray = [...arrayToOperateOn];
 
-	// Determine main operator
-	switch (true) {
-		case (arrayRed.length === 0):
-			noOperator = true;
-			return;
-		case (arrayRed.length > 1):
-			noOperator = false;
-			return arrayRed[1];	
-		default:
-			noOperator = false;
-			return arrayRed[0];
-			break;
+	tempArray.shift();
+
+	let operationIndexTempArray = tempArray.findIndex(element => 
+		element === '+' || element === '-' || 
+		element === '*' || element === '/');
+
+	// We get a negative index if there's no operation
+	if (operationIndexTempArray < 0) {
+		return 'no operation';
 	}
+
+	// Index in original array is index in temp + 1
+	return operationIndexTempArray + 1;
 }
 
 
 function equal(arrayToOperateOn) {
-
-	// Index of main operator in the arrayToOperateOn
 	let operationIndex = findOperator(arrayToOperateOn);	
 
-	if (noOperator) {
-		return;
-	}
+	if (operationIndex === 'no operation') return;
 
 	let operation = arrayToOperateOn[operationIndex];
 
@@ -191,6 +186,7 @@ function isOperation(char) {
 // Clear working array and display
 function clear() {
 	arrayToOperateOn.length = 0;
+	arrayToOperateOn.push(0);
 
 	arrayToDisplay.length = 0
 	display.textContent = '0';
@@ -256,8 +252,8 @@ function operationButton (e) {
 
 	if (e.target.textContent === '=') {
 		// If there's no operator, = does nothing
-		findOperator(arrayToOperateOn);
-		if (noOperator) return;
+		// findOperator(arrayToOperateOn);
+		if (findOperator(arrayToOperateOn) === 'no operation') return;
 
 		// Calls equal function
 		equal(arrayToOperateOn);
@@ -399,6 +395,12 @@ extraButtons.addEventListener('mousedown', extraButton);
 
 
 
+// Add support for keyboard
+window.addEventListener('keydown', numberKey);
+
+function numberKey(e) {
+	console.log(e);
+}
 
 
 
