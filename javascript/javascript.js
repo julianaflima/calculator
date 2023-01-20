@@ -66,9 +66,7 @@ function findOperator(arrayToOperateOn) {
 		element === '*' || element === '/');
 
 	// We get a negative index if there's no operation
-	if (operationIndexTempArray < 0) {
-		return 'no operation';
-	}
+	if (operationIndexTempArray < 0) return 'no operation';
 
 	// Index in original array is index in temp + 1
 	return operationIndexTempArray + 1;
@@ -77,6 +75,7 @@ function findOperator(arrayToOperateOn) {
 
 function equal(arrayToOperateOn) {
 	let operationIndex = findOperator(arrayToOperateOn);	
+	console.log(arrayToOperateOn);
 
 	if (operationIndex === 'no operation') return;
 
@@ -196,11 +195,16 @@ function clear() {
 
 
 function numberButton (e) {
-	// Do nothing if the target is not a number
+	// Do nothing if click between buttons
 	if (e.target.className === 'numbers') return;
 
+	let currentNumber = e.target.dataset.value;
+	processNumber(currentNumber);
+}
+
+function processNumber (currentNumber) {
 	// Do nothing if there's already a decimal point
-	if (lockDecimalPoint && e.target.textContent === '.') return;
+	if (lockDecimalPoint && currentNumber === '.') return;
 
 	// Clear display if last clicked was an operation button and back to normal background color
 	if (lastClicked === 'operation') {
@@ -219,30 +223,126 @@ function numberButton (e) {
 	}
 
 	// Prevent more than one decimal point
-	if (e.target.textContent === '.') {
+	if (currentNumber === '.') {
 		lockDecimalPoint = true;
 
 		// Add 0 when decimal point is clicked first
 		if (
-		// it's first number, so arrayToOperateOn is empty
-		arrayToOperateOn.length === 0 ||
+		// it's first number, so arrayToOperateOn has only 0
+		arrayToOperateOn.length === 1 ||
 		// It's the second number, so last element of arrayToOperateOn is an operation
 		lastClicked === 'operation') {
 
-			arrayToDisplay.push(0);
+		arrayToDisplay.push(0);
 		}
 	}
 
-	
-	// Add number to arrayToDisplay
-	arrayToDisplay.push(e.target.textContent);
+	// Add number to display
+	arrayToDisplay.push(currentNumber);
 	display.textContent = arrayToDisplay.join('');
 
-	// Add number to arrayToOperateOn
-	arrayToOperateOn.push(e.target.textContent);
+	// Add number to array to operate
+	arrayToOperateOn.push(currentNumber);
 
 	lastClicked = 'number';
+}
 
+
+function extraButton (e) {
+	if (lastClicked === 'clear') return;
+
+	if (e.target.dataset.value === 'clear') {
+		processClear();
+		return;
+	}
+
+	if (e.target.dataset.value === 'backspace') {
+		processBackspace();
+		return;
+	}
+}
+
+
+function processClear () {
+	if (lastClicked === 'clear') return;
+
+	clear();
+	callEqual = 0;
+	lockDecimalPoint = false;
+}
+
+
+function processBackspace () {
+	if (lastClicked === 'clear') return;
+
+	// Backspace doesn't work after calling operation
+	if (lastClicked === '=') return;
+
+	// If deleting operation, decrease callEqual and display remains the same
+	let lastElement = arrayToOperateOn[arrayToOperateOn.length - 1];
+	if (isOperation(lastElement)){ 
+		arrayToOperateOn.pop();
+		callEqual--;
+		lastClicked = 'backspace';
+		return;
+	}
+
+	// If deleting a decimal point, unlock button
+	if (lastElement === '.') lockDecimalPoint = false;
+
+	// If deleting last digit on the array
+	if (arrayToOperateOn.length === 1 || 
+		arrayToOperateOn.length === 0) {
+		arrayToOperateOn.pop();
+		arrayToOperateOn.push(0);
+
+		arrayToDisplay.length = 0;
+		display.textContent = '0';
+
+		lastClicked = 'backspace';
+		lockDecimalPoint = false;
+		return;
+	}
+
+	// Remove last item from arrayToOperateOn
+	arrayToOperateOn.pop();
+
+	// If above deletes first digit of second number, display first number (or everything up to the operation)
+	if (isOperation(arrayToOperateOn[arrayToOperateOn.length - 1])) {			
+		// Reset array to display
+		arrayToDisplay.length = 0;
+
+		// update with values up to the operation
+		for(let i = 0; i <= arrayToOperateOn.length - 2; i++){
+			arrayToDisplay.push(arrayToOperateOn[i]);
+		}
+
+		display.textContent = +arrayToDisplay.join('');
+
+		lastClicked = 'operation';
+		return;
+	}
+
+	// Update display
+	updateArray(display.textContent.split(''), arrayToDisplay);
+	arrayToDisplay.pop();
+	display.textContent = +arrayToDisplay.join('');
+
+	lastClicked = 'backspace';
+	return;
+}
+
+
+function processEqual () {
+	// Calls equal function
+	equal(arrayToOperateOn);
+
+	// Update array to hold only the result
+	updateArray(result.split(''), arrayToOperateOn);
+
+	// Update display
+	updateArray(arrayToOperateOn, arrayToDisplay);
+	display.textContent = arrayToDisplay.join('');
 }
 
 
@@ -250,24 +350,23 @@ function operationButton (e) {
 	// Do nothing if the target is between buttons
 	if (e.target.id === 'operations') return;
 
-	if (e.target.textContent === '=') {
+	let currentOperation = e.target.dataset.value;
+	processOperation (currentOperation);
+}
+
+
+function processOperation (currentOperation) {
+
+	if (currentOperation === '=') {
 		// If there's no operator, = does nothing
-		// findOperator(arrayToOperateOn);
 		if (findOperator(arrayToOperateOn) === 'no operation') return;
 
-		// Calls equal function
-		equal(arrayToOperateOn);
-
-		// Update array to hold only the result
-		updateArray(result.split(''), arrayToOperateOn);
-
-		// Update display
-		updateArray(arrayToOperateOn, arrayToDisplay);
-		display.textContent = arrayToDisplay.join('');
+		processEqual();
 
 		lastClicked = '=';
 		callEqual = 0;
 		lockDecimalPoint = false;
+
 		return;
 	}
 
@@ -279,31 +378,22 @@ function operationButton (e) {
 
 	// Do the math when there's one operation
 	if (callEqual === 1) {
-		// Do the math; the result is a string
-		equal(arrayToOperateOn);
-
-		// Update array to hold only the result
-		updateArray(result.split(''), arrayToOperateOn);
-
-		// Update display
-		updateArray(arrayToOperateOn, arrayToDisplay);
-		display.textContent = +arrayToDisplay.join('');
+		
+		processEqual();
 
 		// Add operation to arrayToOperateOn
-		arrayToOperateOn.push(e.target.textContent);
+		arrayToOperateOn.push(currentOperation);
 
 		lastClicked = 'operation';
 		callEqual++;
 		lockDecimalPoint = false;
 		return;
 	}
-	
 
 	// For all buttons but '=', add the operation to the arrayToOperateOn
-	arrayToOperateOn.push(e.target.textContent);
+	arrayToOperateOn.push(currentOperation);
 	// Change color of button operation
 	// e.target.id = 'operation-clicked';
-
 
 	lastClicked = 'operation';
 	callEqual++;
@@ -311,99 +401,36 @@ function operationButton (e) {
 }
 
 
-function extraButton (e) {
-	if (lastClicked === 'clear') return;
-
-	switch (e.target.id) {
-		case 'clear':
-			clear();
-			lastClicked = 'clear';
-			callEqual = 0;
-			lockDecimalPoint = false;
-			break;
-
-		case 'backspace':
-			// Backspace doesn't work after calling operation
-			if (lastClicked === '=') return;
-
-			// If deleting operation, decrease callEqual and display remains the same
-			let lastElement = arrayToOperateOn[arrayToOperateOn.length - 1];
-			if (isOperation(lastElement)){ 
-				arrayToOperateOn.pop();
-				callEqual--;
-				lastClicked = 'backspace';
-				return;
-			}
-
-			// If deleting a decimal point, unlock button
-			if (lastElement === '.') lockDecimalPoint = false;
-
-			// If deleting last digit on the array
-			if (arrayToOperateOn.length === 1 || 
-				arrayToOperateOn.length === 0) {
-				arrayToOperateOn.pop();
-				arrayToDisplay.length = 0;
-				display.textContent = '0';
-
-				lastClicked = 'backspace';
-				lockDecimalPoint = false;
-				return;
-			}
-
-			// Remove last item from arrayToOperateOn
-			arrayToOperateOn.pop();
-
-
-			// If above deletes first digit of second number, display first number (or everything up to the operation)
-			if (isOperation(arrayToOperateOn[arrayToOperateOn.length - 1])) {			
-				// Reset array to display
-				arrayToDisplay.length = 0;
-
-				// update with values up to the operation
-				for(let i = 0; i <= arrayToOperateOn.length - 2; i++){
-					arrayToDisplay.push(arrayToOperateOn[i]);
-				}
-				display.textContent = +arrayToDisplay.join('');
-
-				lastClicked = 'operation';
-				return;
-			}
-
-
-			// Default behavior of backspace is to just remove last digit from display
-			// the last element has already been removed from arrayToOperateOn
-			// Just need to update display
-			updateArray(display.textContent.split(''), arrayToDisplay);
-			arrayToDisplay.pop();
-			display.textContent = +arrayToDisplay.join('');
-
-			lastClicked = 'backspace';
-			break;
-
-		// Does nothing if click is between buttons
-		default:
-			break;
-	}
-}
-
 
 numberButtons.addEventListener('mousedown', numberButton);
 
+
 operationsButtons.addEventListener('mousedown', operationButton);
+
 
 extraButtons.addEventListener('mousedown', extraButton);
 
 
 
 // Add support for keyboard
-window.addEventListener('keydown', numberKey);
+window.addEventListener('keydown', processKey);
 
-function numberKey(e) {
-	console.log(e);
+
+function processKey(e) {
+	let currentKey = e.key;
+
+	if ((currentKey >= 0 && currentKey <= 9) || currentKey === '.') processNumber(currentKey);
+
+	if (currentKey === 'c') processClear();
+
+	if (currentKey === 'Backspace')processBackspace();
+
+	if (currentKey === '/') e.preventDefault();
+
+	if (currentKey === '=' || isOperation(currentKey)) processOperation(currentKey);
+
+	if (currentKey === 'Enter') processOperation('=');
 }
-
-
-
 
 
 
